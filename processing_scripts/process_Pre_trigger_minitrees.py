@@ -31,6 +31,22 @@ cache_file_name = '/scratch/midway2/jpienaar/cache_files/'+run_number+ '_Pre_tri
 print (run_number, cache_file_name)
 df = hax.minitrees.load(cache_file = cache_file_name)
 
+#Load AFT Cut Values
+with open('/home/jpienaar/SingleElectrons/aft_fit_values.pkl', 'rb') as handle:
+    dict_aft_fits = pickle.load(handle)
+
+#Define AFT Cut    
+def aft_peak_cut(df):
+    aft_means=np.array(dict_aft_fits['Background']['means'])
+    aft_sigmas=np.array(dict_aft_fits['Background']['sigmas'])
+    bins=dict_aft_fits['Background']['bins']
+    df['CutPeakAFT']= True ^ (df.area_fraction_top>np.interp(np.log10(df.area), bins, aft_means-3*aft_sigmas)) ^ (df.area_fraction_top<np.interp(np.log10(df.area), bins, aft_means+3*aft_sigmas)) 
+    return df
+
+#Apply AFT Cut
+df = aft_peak_cut(df)
+df = hax.cuts.selection(df, df['CutPeakAFT'], "CutPeakAFT")
+
 #Binning
 window_length=10**8
 t_bins=np.linspace(0, window_length, 201)
@@ -105,7 +121,8 @@ dt_xy_histogram=Histdd(bins=[t_bins,
 #Find all unique primary S2 events
 all_events=pd.unique(df['event_number'].values)
 unique_s2s=[]
-num_s2s=np.min([500000, len(all_events)])
+#num_s2s=np.min([500000, len(all_events)])
+num_s2s=len(all_events)
 for s2 in tqdm(all_events[:num_s2s]):
     s2_df=df[df.event_number==s2].iloc[0]
     unique_s2s.append([s2_df.s2_time, s2_df.x_s2_tpf, s2_df.y_s2_tpf, s2_df.s2])
