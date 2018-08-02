@@ -43,18 +43,17 @@ def aft_peak_cut(df):
     df['CutPeakAFT']= True ^ (df.area_fraction_top>np.interp(np.log10(df.area), bins, aft_means-3*aft_sigmas)) ^ (df.area_fraction_top<np.interp(np.log10(df.area), bins, aft_means+3*aft_sigmas)) 
     return df
 
-#Apply AFT Cut
+#Determine Cut PAss/Fail for whole DF
 df = aft_peak_cut(df)
-df = hax.cuts.selection(df, df['CutPeakAFT'], "CutPeakAFT")
 
 #Binning
 window_length=10**8
-t_bins=np.linspace(0, window_length, 201)
-t_bin_width=t_bins[1:]-t_bins[:-1]
-r_bins=np.linspace(0, (R_tpc)**2, 101)
-dist_bins=np.linspace(0, (2*R_tpc), 101)
-s2_bins   = np.linspace(2, 6, 51)
-s2_p_bins = np.linspace(0, 4, 51)
+t_bins     = np.linspace(0, window_length, 201)
+t_bin_width= t_bins[1:]-t_bins[:-1]
+r_bins     = np.linspace(0, (R_tpc)**2, 101)
+dist_bins  = np.linspace(-R_tpc, R_tpc, 101)
+s2_bins    = np.linspace(2, 6, 51)
+s2_p_bins  = np.linspace(0, 4, 51)
 
 #Define Blank Hists
 livet_histogram=Histdd(bins=[t_bins,
@@ -170,7 +169,10 @@ for s2 in tqdm(unique_s2s):
             if bin_allocation_start[idx]+(bin_allocation-1)<len(t_bins)-1:
                 live_time_array.append([t_bins[bin_allocation_start[idx]+(bin_allocation-1)], 
                                         (end_time[idx]-t_bins[bin_allocation_start[idx]+(bin_allocation-1)])/t_bin_width[bin_allocation_start[idx]+(bin_allocation-1)]])
-          
+    
+    #Apply AFT Cut
+    temp_df=hax.cuts.selection(temp_df, temp_df['CutPeakAFT'], "CutPeakAFT")
+    
     #Some Extra Branches
     r_s2=s2[1]**2+s2[1]**2
     
@@ -286,7 +288,8 @@ for s2 in tqdm(unique_s2s):
     dt_xy_histogram+=histogram
         
 #Store in Dict for Later
-dict_hist={'deltat':events_histogram, 'deltat_weights':weights_histogram,
+dict_hist={'version' : 1.0,
+           'deltat':events_histogram, 'deltat_weights':weights_histogram,
            'peaks': peaks_histogram, 
            'livet_hist': livet_histogram, 'livet_weights': livet_weights_histogram, 
            'dt_r2':dt_r2_histogram, 'dt_r2_weights':weights_dt_r2_histogram,

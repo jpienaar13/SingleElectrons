@@ -5,6 +5,7 @@
 #python /home/jpienaar/batchjobs/process_Pre_trigger_minitrees.py {run} NB!!! This one has hardcoded event lim right now!!!
 #python /home/jpienaar/batchjobs/process_Pre_trigger_minitrees_xy.py {run} NB!!! Update this script!!!!!
 #################################################################
+queue_name='dali'
 
 x = """#!/bin/bash
 #SBATCH --job-name={run}
@@ -14,7 +15,7 @@ x = """#!/bin/bash
 #SBATCH --output=minitree_%J.log
 #SBATCH --error=minitree_%J.log
 #SBATCH --account=pi-lgrandi
-#SBATCH --partition=broadwl
+#SBATCH --partition={queue}
 export PATH=/project/lgrandi/anaconda3/bin:$PATH
 export PROCESSING_DIR=/scratch/midway2/jpienaar/minitrees/minitree_{run}
         
@@ -22,7 +23,7 @@ mkdir -p ${{PROCESSING_DIR}}
 cd ${{PROCESSING_DIR}}
 rm -f pax_event_class*
 source activate pax_head
-python /home/jpienaar/batchjobs/make_PI_minitrees.py {run}
+python /home/jpienaar/SingleElectrons/processing_scripts/make_PI_minitrees.py {run}
 rm -r ${{PROCESSING_DIR}}
 """
 import os
@@ -59,7 +60,7 @@ hax.init(experiment='XENON1T',
                          ],
         ) 
 datasets = hax.runs.datasets 
-datasets = hax.runs.tags_selection(include=['*sciencerun1'],
+datasets = hax.runs.tags_selection(include=['*'],
                                   exclude=['bad','messy', 'test',
                                            'nofield','lowfield',
                                            'commissioning',
@@ -67,14 +68,14 @@ datasets = hax.runs.tags_selection(include=['*sciencerun1'],
                                            'source_opening',
                                            ],
                                   )
-datasets= hax.cuts.selection(datasets, datasets['source__type']=='none', 'Source in place')
+datasets= hax.cuts.selection(datasets, datasets['source__type']=='Kr83m', 'Source in place')
 datasets= hax.cuts.selection(datasets, datasets['location'] != '', 'Processed data available')
 run_numbers = datasets['number'].values
 dataset_names = datasets['name']
 print('Total of %d datasets' % len(run_numbers))
 
 def check_queue():
-    command='squeue -u jpienaar --partition=broadwl | wc -l'
+    command='squeue -u jpienaar --partition=%s| wc -l' %queue_name
     var=subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     (var, err)=var.communicate()
     var=int(str(var, 'utf-8'))
@@ -83,11 +84,11 @@ def check_queue():
 
 
 #For every run, make and submit the script
-for dataset in dataset_names[0:100]:# in run_numbers[:1]:
-    while check_queue()>10:
+for dataset in dataset_names[800:1400:10]:# in run_numbers[:1]:
+    while check_queue()>20:
         print("Jobs in queue: ", check_queue())
         time.sleep(60)
-    y = x.format(run=dataset)
+    y = x.format(run=dataset, queue=queue_name)
     submit_job(y)
 
 # Check your jobs with: 'squeue -u <username>'

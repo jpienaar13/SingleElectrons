@@ -96,7 +96,7 @@ def yield_peak_info(event):
 
 
 class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
-    __version__ = '4.0.0'
+    __version__ = '5.0.0'
     uses_arrays=True
     extra_branches = ['peaks.left', 'peaks.n_hits', 'peaks.area', 'peaks.type',
                       'peaks.n_contributing_channels', 'peaks.n_contributing_channels_top',
@@ -114,7 +114,6 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
             result['x_s2_nn'] = x_s2_nn
             result['y_s2_nn'] = y_s2_nn
             result['n_hits'] = peak.n_hits
-            #result['type']= peak.type
             result['area'] = peak.area
             result['global_time'] = time_peak+event.start_time
             result['event_stop'] = event.stop_time
@@ -124,7 +123,6 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
             result['p_range_50p_area'] = peak.range_area_decile[5]
             result['n_contributing_channels'] = peak.n_contributing_channels
             result['n_contributing_channels_top'] = peak.n_contributing_channels_top
-            #result['sum_waveform'] = np.array(list(peak.sum_waveform))
             for rp in peak.reconstructed_positions:
                 if rp.algorithm == 'PosRecTopPatternFit':
                     result['x_p_tpf'] = rp.x
@@ -134,7 +132,70 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
                     result['x_p_nn'] = rp.x
                     result['y_p_nn'] = rp.y
                     result['xy_gof_nn'] = rp.goodness_of_fit
+                    
+            if peak.type == 's1': 
+                result['type'] = 1
+            if peak.type == 's2': 
+                result['type'] = 2
+            if peak.type == 'lone_hit': 
+                result['type'] = 3
+            if peak.type == 'unknown': 
+                result['type'] = 4   
             results.append(result)
 
 
         return results
+    
+class Primary_Times(hax.minitrees.TreeMaker):
+    """
+    Provides:
+     - event_stop: 
+     - event_start: 
+     - s1_time: 
+     - s2_time: 
+    """
+    __version__ = '1.0.0'
+    extra_branches = ['peaks']
+
+    def extract_data(self, event):
+        result={}
+        
+        if len(event.interactions) == 0:
+            if len(event.s2s):
+                i_s2 = event.s2s[0]
+                i_s1 = np.nan
+                time_s2 = event.peaks[i_s2].area_midpoint
+                time_s1 = np.nan
+            else:
+                return result  
+        else:
+            i_s2=event.interactions[0].s2
+            i_s1=event.interactions[0].s1
+
+            #Time of primary S2/S1
+            time_s1=event.peaks[i_s1].area_midpoint
+            time_s2=event.peaks[i_s2].area_midpoint
+            
+        #S2 position
+        x_s2_tpf = np.nan
+        y_s2_tpf = np.nan
+        x_s2_nn = np.nan
+        y_s2_nn = np.nan
+        rp_s2 = event.peaks[i_s2].reconstructed_positions
+        for rp in rp_s2:
+            if rp.algorithm == 'PosRecTopPatternFit':
+                x_s2_tpf = rp.x
+                y_s2_tpf = rp.y
+            elif rp.algorithm == 'PosRecNeuralNet':
+                x_s2_nn = rp.x
+                y_s2_nn = rp.y
+               
+        result['event_stop'] = event.stop_time
+        result['event_start'] = event.start_time
+        result['s1_time'] = time_s1 + event.start_time
+        result['s2_time'] = time_s2 + event.start_time 
+        result['x_s2_tpf'] = x_s2_tpf
+        result['y_s2_tpf'] = y_s2_tpf
+        result['x_s2_nn'] = x_s2_nn
+        result['y_s2_nn'] = y_s2_nn
+        return result

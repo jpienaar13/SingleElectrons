@@ -31,6 +31,7 @@ from subprocess import PIPE
 import time
 import glob
 import numpy as np
+import pickle
 
 # Use submit procedure from CAX
 os.system('source activate pax_head')
@@ -79,6 +80,18 @@ datasets_pickle = get_file_list(simpath, '*dt.pkl', '_dt.pkl')
 print('Found %d processed files' % len(datasets_pickle))
 
 processing_list=np.setdiff1d(datasets_hdf5, datasets_pickle, assume_unique=True)
+
+processed_list=[]
+datasets = get_file_list(simpath, '*dt.hdf5')
+for dataset in datasets:
+    with open(simpath+dataset, 'rb') as handle:
+        data_temp = pickle.load(handle)
+        try:
+            data_temp['version']
+            processed_list.append(dataset)
+        except KeyError:
+            continue
+print("Found %i files processed with version number" %len(processed_list))
 
 #For every run, make and submit the script
 for dataset in processing_list[:]:
