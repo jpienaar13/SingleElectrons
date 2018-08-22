@@ -90,7 +90,7 @@ def yield_peak_info(event):
 
 
 class S2_ionization(hax.minitrees.MultipleRowExtractor):
-    __version__ = '2.0.0'
+    __version__ = '2.1.0'
     uses_arrays=True
     extra_branches = ['peaks.left', 'peaks.n_hits', 'peaks.area', 'peaks.type',
                       'peaks.n_contributing_channels', 'peaks.n_contributing_channels_top',
@@ -114,7 +114,7 @@ class S2_ionization(hax.minitrees.MultipleRowExtractor):
                 result['s1_area_fraction_top']=s1.area_fraction_top
                 result['s2_area_fraction_top']=s2.area_fraction_top
                 result['s1_range_50p_area']=s1.range_area_decile[5]
-                result['s2_range_50p_area']=s1.range_area_decile[5]
+                result['s2_range_50p_area']=s2.range_area_decile[5]
                 result['s1_time']=s1.hit_time_mean
                 result['s2_time']=s2.hit_time_mean        
                 result['event_stop'] = event.stop_time
@@ -130,6 +130,7 @@ class S2_ionization(hax.minitrees.MultipleRowExtractor):
                 result['p_range_50p_area'] = peak.range_area_decile[5]
                 result['n_contributing_channels'] = peak.n_contributing_channels
                 result['n_contributing_channels_top'] = peak.n_contributing_channels_top
+                result['top_hitpattern_spread'] = peak.top_hitpattern_spread
                 for rp in peak.reconstructed_positions:
                     if rp.algorithm == 'PosRecTopPatternFit':
                         result['x_p_tpf'] = rp.x
@@ -139,6 +140,16 @@ class S2_ionization(hax.minitrees.MultipleRowExtractor):
                         result['x_p_nn'] = rp.x
                         result['y_p_nn'] = rp.y
                         result['xy_gof_nn'] = rp.goodness_of_fit
+                        
+                if peak.type == 's1': 
+                    result['type'] = 1
+                if peak.type == 's2': 
+                    result['type'] = 2
+                if peak.type == 'lone_hit': 
+                    result['type'] = 3
+                if peak.type == 'unknown': 
+                    result['type'] = 4        
+
                 results.append(result)
 
 

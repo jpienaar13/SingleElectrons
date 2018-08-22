@@ -62,7 +62,11 @@ def yield_peak_info(event):
         elif rp.algorithm == 'PosRecNeuralNet':
             x_s2_nn = rp.x
             y_s2_nn = rp.y
-            
+    
+    #Get Trigger time
+    peaks_trigger = [p.area_midpoint for p in event.peaks if p.type=='s1' or p.area>150]
+    first_trigger = min(peaks_trigger, default=1.0e6)
+    
     # Get all non-lone-hit peaks in the TPC
     peaks_tmp = []
     for i, peak in enumerate(event.peaks):
@@ -81,22 +85,22 @@ def yield_peak_info(event):
         return []
     
     for i, peak in enumerate(peaks):      
-        #Make sure event.peak is to the right of s1 by looking at time (ns)
+        #Make sure event.peak is to the right of s1/s2 by looking at time (ns)
         time_peak = peak.area_midpoint
         if not np.isnan(time_s1):
             if not time_peak < time_s1: 
                 continue
             else:
-                yield peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak
+                yield peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak, first_trigger
         if np.isnan(time_s1):
             if not time_peak < time_s2: 
                 continue
             else:
-                yield peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak
+                yield peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak, first_trigger
 
 
 class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
-    __version__ = '5.0.0'
+    __version__ = '5.1.0'
     uses_arrays=True
     extra_branches = ['peaks.left', 'peaks.n_hits', 'peaks.area', 'peaks.type',
                       'peaks.n_contributing_channels', 'peaks.n_contributing_channels_top',
@@ -105,9 +109,9 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
 
  
     def extract_data(self, event):       
-        results = []      
-   
-        for peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak in yield_peak_info(event):
+        results = []
+         
+        for peak, x_s2_tpf, y_s2_tpf, x_s2_nn, y_s2_nn, time_s1, time_s2, time_peak, first_trigger in yield_peak_info(event):
             result = dict({x: getattr(peak, x) for x in ['area', 'area_fraction_top', 'n_hits']})
             result['x_s2_tpf'] = x_s2_tpf
             result['y_s2_tpf'] = y_s2_tpf
@@ -121,8 +125,11 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
             result['s1_time']=time_s1+event.start_time
             result['s2_time']=time_s2+event.start_time  
             result['p_range_50p_area'] = peak.range_area_decile[5]
+            result['p_range_90p_area'] = peak.range_area_decile[9]
             result['n_contributing_channels'] = peak.n_contributing_channels
             result['n_contributing_channels_top'] = peak.n_contributing_channels_top
+            result['rise_time'] = peak.area_decile_from_midpoint[1]
+            result['time_before_trigger'] = first_trigger - peak.center_time            
             for rp in peak.reconstructed_positions:
                 if rp.algorithm == 'PosRecTopPatternFit':
                     result['x_p_tpf'] = rp.x
