@@ -1,38 +1,9 @@
 import sys
 import hax
-import hax
 import numpy as np
 from pax import units
 from collections import defaultdict
 import math
-
-def get_largest_indices(peaks, exclude_indices=tuple()):
-
-    """Return a dic with the indices in peaks of the largest peak of each type (s1, s2, etc)
-    excluding the indices in exclude_peak_indices from consideration
-    """
-
-    largest_area_of_type = defaultdict(float)
-    largest_indices = dict()
-
-    for i, p in enumerate(peaks):
-        if i in exclude_indices:
-            continue
-
-        if p.detector == 'tpc':
-            peak_type = p.type
-
-        else:
-
-            if p.type == 'lone_hit':
-                peak_type = 'lone_hit_%s' % p.detector    # Will not be saved
-            else:
-                peak_type = p.detector
-        if p.area > largest_area_of_type[peak_type]:
-            largest_area_of_type[peak_type] = p.area
-            largest_indices[peak_type] = i
-            
-    return largest_indices   
 
 def yield_peak_info(event):
     #NB peaks and event.peaks are not the same!!!
