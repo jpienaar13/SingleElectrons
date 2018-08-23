@@ -100,7 +100,7 @@ class Pre_Trigger(hax.minitrees.MultipleRowExtractor):
             result['n_contributing_channels'] = peak.n_contributing_channels
             result['n_contributing_channels_top'] = peak.n_contributing_channels_top
             result['rise_time'] = peak.area_decile_from_midpoint[1]
-            result['time_before_trigger'] = first_trigger - peak.center_time            
+            result['time_before_trigger'] = first_trigger - time_peak            
             for rp in peak.reconstructed_positions:
                 if rp.algorithm == 'PosRecTopPatternFit':
                     result['x_p_tpf'] = rp.x
@@ -133,7 +133,7 @@ class Primary_Times(hax.minitrees.TreeMaker):
      - s2_time: 
     """
     __version__ = '1.0.0'
-    extra_branches = ['peaks']
+    extra_branches = ['peaks.*']
 
     def extract_data(self, event):
         result={}
