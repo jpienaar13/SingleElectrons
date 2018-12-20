@@ -39,8 +39,8 @@ from cax.qsub import submit_job
 ####################################################################
 #Define Values for which to fit#
 ####################################################################
-scaling_constant_values=np.linspace(1*10**-5, 1*10**-4, 51)
-time_scale_values=np.linspace(10, 50, 41)
+scaling_constant_values=np.logspace(-5, -4, 26)
+time_scale_values=np.linspace(2, 10, 32)
 
 def check_queue():
     command='squeue -u jpienaar --partition=%s| wc -l' %queue_name
@@ -50,12 +50,12 @@ def check_queue():
     return var
 
 
-known_source='Background'
+known_source='Krypton'
 #For every run, make and submit the script
 it=0
 for  scaling_constant in scaling_constant_values:
     for  time_scale in time_scale_values:
-        while check_queue()>50:
+        while check_queue()>25:
             print("Jobs in queue: ", check_queue())
             time.sleep(60)
         print('Submit job with c=%f and tau=%f' %(scaling_constant, time_scale))

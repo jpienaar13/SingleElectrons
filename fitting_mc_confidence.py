@@ -80,7 +80,7 @@ def se_histogram(event_rate, # Number of events assumed to occur within 1s
 ##    
 ##Produce "True" Waveform:
 ##
-waveforms = 10000
+waveforms = 1000
 time_bins = 200
 window_length=100
 dict_mc_known={}
@@ -109,8 +109,8 @@ true_waveform=y_bins/waveforms
 ##Fit "True" Waveform to Toy MC and find best fit_value.
 ##
 #Store fit values for parameter being scanned
-scaling_constant_values=np.linspace(1*10**-5, 1*10**-4, 51)
-time_scale_values=np.linspace(10, 50, 41)
+scaling_constant_values=np.logspace(-5, -4, 26)
+time_scale_values=np.linspace(2, 10, 32)
 
 #Settings for ToyMC for other parameters
 source=known_source
